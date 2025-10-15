@@ -1,13 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express'); 
+const router = express.Router(); 
 const userController = require('../controllers/userController');
 
-// Định nghĩa route cho /users
-
-// GET /users: Lấy danh sách tất cả người dùng
-router.get('/', userController.getAllUsers);
-
-// POST /users: Tạo người dùng mới
-router.post('/', userController.createUser);
+router.get('/users', userController.getUsers); 
+router.post('/users', userController.createUser); 
+router.put('/users/:id', userController.updateUser);   // PUT 
+router.delete('/users/:id', userController.deleteUser); // DELETE 
 
 module.exports = router;
