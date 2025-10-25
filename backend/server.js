@@ -6,6 +6,9 @@ const MONGO_URI = 'mongodb+srv://si224697_db_user:123456789Aa@cluster0.yvo1aet.m
 const express = require('express');
 const app = express();
 
+const cors = require('cors');
+app.use(cors());
+
 // 1. Nhập (import) tệp routes
 const userRoutes = require('./routes/user'); // Đảm bảo đường dẫn này đúng
 
