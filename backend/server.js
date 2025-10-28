@@ -11,6 +11,9 @@ app.use(cors());
 
 // 1. Nhập (import) tệp routes
 const userRoutes = require('./routes/user'); // Đảm bảo đường dẫn này đúng
+const profileRoutes = require('./routes/profile');
+
+app.use('/profile', profileRoutes);
 
 // Middleware: Cho phép ứng dụng đọc JSON từ request body (cho POST /users)
 app.use(express.json());
