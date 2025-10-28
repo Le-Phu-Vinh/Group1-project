@@ -1,12 +1,28 @@
-const express = require('express');
+// routes/profile.js - Dùng 'import' và 'export default'
+import express from "express";
+import User from "../models/User.js"; // Import 'default' từ User.js
+
 const router = express.Router();
-const auth = require('../middleware/auth'); // Nhập middleware
-const profileController = require('../controllers/profileController');
 
-// GET /profile: Cần middleware xác thực (auth)
-router.get('/', auth, profileController.viewProfile);
+router.get("/", async (req, res) => {
+  try {
+    const userId = "690094f2f9c1dfe36edf030f"; 
+    const user = await User.findById(userId).select("-password");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// PUT /profile: Cần middleware xác thực (auth)
-router.put('/', auth, profileController.updateProfile);
+router.put("/", async (req, res) => {
+  try {
+    const userId = "690094f2f9c1dfe36edf030f"; 
+    const updates = req.body;
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true }).select("-password");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-module.exports = router;
+export default router; // Quan trọng: dùng 'export default'
