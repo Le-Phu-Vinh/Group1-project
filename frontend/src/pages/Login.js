@@ -16,7 +16,7 @@ function Login() {
     e.preventDefault();
     setError('');
     try {
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/users/login', { email, password });
       const { user, token } = res.data; 
       login(user, token); 
       navigate('/profile'); 

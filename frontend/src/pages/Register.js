@@ -14,7 +14,7 @@ function Register() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/signup', { name, email, password });
+      await api.post('/users/signup', { name, email, password });
       alert('Đăng ký thành công! Vui lòng đăng nhập.');
       navigate('/login'); 
     } catch (err) {
