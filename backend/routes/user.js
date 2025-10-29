@@ -1,23 +1,35 @@
-// routes/user.js
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
-const authController = require('../controllers/authController');
 
-// Định tuyến cho GET /users (Đã được tiền tố bằng app.use('/users', ...) trong server.js)
-router.get('/', userController.getUsers);
+// ✅ Gom tất cả các hàm từ userController vào một lệnh Destructuring DUY NHẤT.
+// (Đảm bảo các hàm này được export tập trung bằng module.exports trong controller)
+const { 
+    getUsers, createUser, updateUser, deleteUser, 
+    getProfile, updateProfile 
+} = require('../controllers/userController');
 
-// Định tuyến cho POST /users
-router.post('/', userController.createUser);
+// ✅ Import các hàm Auth
+const { signup, login, logout } = require('../controllers/authController');
 
-// PUT /users/:id (API cập nhật)
-router.put('/:id', userController.updateUser);
+const protect = require('../middleware/authMiddleware'); // Middleware xác thực
 
-// DELETE /users/:id (API xóa)
-router.delete('/:id', userController.deleteUser);
+// Route /profile (Đã bảo vệ)
+router.route('/profile')
+    .get(protect, getProfile)
+    .put(protect, updateProfile);
+    
 
-router.post('/signup', authController.signup);
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
+    // Các route Auth
+router.post('/signup', signup);
+router.post('/login', login);
+router.post('/logout', logout);
 
+// Định tuyến cho GET /users (CRUD)
+router.get('/', getUsers);
+router.post('/', createUser);
+router.put('/:id', updateUser);
+router.delete('/:id', deleteUser);
+
+
+    
 module.exports = router;
