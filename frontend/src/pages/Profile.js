@@ -1,17 +1,36 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api'; // Import api service
-import { Form, Button, Container, Row, Col, Card, Image, Alert } from 'react-bootstrap';
+import { Form, Button, Container, Row, Col, Card, Image, Alert, Spinner } from 'react-bootstrap';
 
 function Profile() {
   const { user, login } = useContext(AuthContext);
-  
+
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const [avatar, setAvatar] = useState(null);
+  // Fetch user profile from server when component mounts
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/users/profile');
+        const userData = res.data; // Backend returns data directly, not wrapped in 'user'
+        setName(userData.name || '');
+        setEmail(userData.email || '');
+        // Update context with fresh data
+        login(userData, localStorage.getItem('token'));
+      } catch (err) {
+        setError(err.response?.data?.message || 'Không thể tải thông tin người dùng.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -19,40 +38,27 @@ function Profile() {
     setError('');
     try {
       // Use api service instead of axios directly
-      const res = await api.put('/profile', { name, email });
-      login(res.data.user, localStorage.getItem('token')); 
+      const res = await api.put('/users/profile', { name, email });
+      const updatedUser = res.data; // Backend returns data directly
+      login(updatedUser, localStorage.getItem('token'));
       setMessage('Cập nhật thông tin thành công!');
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi cập nhật thông tin.');
     }
   };
 
-  const handleAvatarUpload = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    setError('');
-    if (!avatar) {
-      setError('Vui lòng chọn một file để upload.');
-      return;
-    }
-    
-    const formData = new FormData();
-    formData.append('avatar', avatar);
+  if (loading) {
+    return (
+      <Container className="text-center mt-5">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Đang tải...</span>
+        </Spinner>
+        <p className="mt-3">Đang tải thông tin người dùng...</p>
+      </Container>
+    );
+  }
 
-    try {
-      // Use api service instead of axios directly
-      const res = await api.post('/upload-avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      login(res.data.user, localStorage.getItem('token'));
-      setMessage('Upload avatar thành công!');
-      setAvatar(null); // Clear the file input
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi upload avatar.');
-    }
-  };
-
-  if (!user) return <div className="text-center mt-5">Đang tải...</div>;
+  if (!user) return <div className="text-center mt-5">Không tìm thấy thông tin người dùng.</div>;
 
   return (
     <Container>
@@ -101,18 +107,7 @@ function Profile() {
             </Card.Body>
           </Card>
 
-          <Card>
-            <Card.Body>
-              <Card.Title as="h4">Đổi Avatar</Card.Title>
-              <Form onSubmit={handleAvatarUpload}>
-                <Form.Group controlId="formFile" className="mb-3">
-                  <Form.Label>Chọn file ảnh mới</Form.Label>
-                  <Form.Control type="file" onChange={e => setAvatar(e.target.files[0])} />
-                </Form.Group>
-                <Button variant="primary" type="submit">Upload</Button>
-              </Form>
-            </Card.Body>
-          </Card>
+
         </Col>
       </Row>
     </Container>
