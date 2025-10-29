@@ -1,62 +1,47 @@
-// controllers/userController.js
-
 const User = require('../models/User'); // Nhập User Model đã tạo
-const bcrypt = require('bcryptjs'); // Thư viện để băm mật khẩu (nếu cần)
+// Cần nhập bcrypt cho updateProfile
+const bcrypt = require('bcrypt'); 
 
-const jwt = require('jsonwebtoken');
-// Cần định nghĩa SECRET KEY trong file cấu hình/biến môi trường
-const JWT_SECRET = 'YOUR_SECRET_KEY'; // Cần thay đổi key này
-
-// 1. GET /users (Lấy tất cả người dùng)
-exports.getUsers = async (req, res) => {
+// 1. ✅ SỬA: Thay thế 'exports.getUsers' bằng 'const getUsers'
+const getUsers = async (req, res) => {
     try {
         // Tìm và trả về tất cả tài liệu trong collection 'users'
-        const users = await User.find();
+        const users = await User.find().select('-password'); // Bỏ mật khẩu
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi khi lấy danh sách người dùng', error: error.message });
     }
 };
 
-// 2. POST /users (Tạo người dùng mới)
-exports.createUser = async (req, res) => {
+// 2. ✅ SỬA: Thay thế 'exports.createUser' bằng 'const createUser'
+// Lưu ý: Hàm này cần hash mật khẩu nếu bạn muốn tạo user bằng API này
+const createUser = async (req, res) => {
     try {
         const { name, email } = req.body;
-
-        // Tạo một đối tượng User mới từ request body
-        const newUser = new User({
-            name,
-            email
-        });
-
-        // Lưu đối tượng vào MongoDB
-        const savedUser = await newUser.save();
-        
-        // Trả về đối tượng đã lưu với mã 201 Created
-        res.status(201).json(savedUser);
+        // Bỏ logic tạo user đơn giản, vì authController đã có signup
+        res.status(501).json({ message: 'Use POST /users/signup for user creation.' });
 
     } catch (error) {
-        // Xử lý lỗi trùng lặp email (error code 11000)
-        if (error.code === 11000) {
-            return res.status(400).json({ message: 'Email đã tồn tại.' });
-        }
         res.status(500).json({ message: 'Lỗi khi tạo người dùng mới', error: error.message });
     }
 };
 
-// 3. PUT /users/:id (Cập nhật người dùng)
-exports.updateUser = async (req, res) => {
+// 3. ✅ SỬA: Thay thế 'exports.updateUser' bằng 'const updateUser'
+const updateUser = async (req, res) => {
     try {
         const userId = req.params.id;
         const updates = req.body;
         
-        // Tìm và cập nhật người dùng. 
-        // { new: true } trả về tài liệu đã cập nhật, 
-        // { runValidators: true } đảm bảo các quy tắc schema (như required, unique) được áp dụng.
+        // Cần xử lý hash mật khẩu nếu nó là một trường được cập nhật
+        if (updates.password) {
+             const salt = await bcrypt.genSalt(10);
+             updates.password = await bcrypt.hash(updates.password, salt);
+        }
+        
         const updatedUser = await User.findByIdAndUpdate(userId, updates, { 
             new: true, 
             runValidators: true 
-        });
+        }).select('-password');
 
         if (!updatedUser) {
             return res.status(404).json({ message: 'Không tìm thấy người dùng để cập nhật.' });
@@ -71,8 +56,8 @@ exports.updateUser = async (req, res) => {
     }
 };
 
-// 4. DELETE /users/:id (Xóa người dùng)
-exports.deleteUser = async (req, res) => {
+// 4. ✅ SỬA: Thay thế 'exports.deleteUser' bằng 'const deleteUser'
+const deleteUser = async (req, res) => {
     try {
         const userId = req.params.id;
         
@@ -83,7 +68,7 @@ exports.deleteUser = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy người dùng để xóa.' });
         }
         
-        // Trả về mã 204 No Content hoặc 200 OK cùng với thông báo
+        // Trả về mã 200 OK cùng với thông báo
         res.status(200).json({ message: 'Người dùng đã được xóa thành công.', deletedUser });
 
     } catch (error) {
@@ -91,80 +76,76 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-exports.signup = async (req, res) => {
-    try {
-        const { email, password, role } = req.body;
+// @desc    Lấy hồ sơ người dùng
+// @route   GET /users/profile
+// @access  Private
+const getProfile = async (req, res) => {
+    // 1. KIỂM TRA BẢO VỆ: Nếu middleware thất bại hoặc không gán user, dừng ngay lập tức.
+    if (!req.user || !req.user._id) { 
+        // Đây là kiểm tra bảo vệ, lỗi 500 sẽ không xảy ra nữa
+        return res.status(401).json({ message: 'Not authorized: User object is missing or invalid.' });
+    }
 
-        // 1. Kiểm tra email trùng
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: 'Email đã tồn tại.' });
+    // 2. SỬ DỤNG TRỰC TIẾP req.user (đã được lấy từ DB trong middleware)
+    // Loại bỏ lệnh User.findById() dư thừa
+    const user = req.user; 
+    
+    // 3. Trả về dữ liệu
+    res.json({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar, 
+        role: user.role,
+    });
+};
+
+// @desc    Cập nhật hồ sơ người dùng
+// @route   PUT /users/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    // 1. KIỂM TRA BẢO VỆ
+    if (!req.user || !req.user._id) { 
+        return res.status(401).json({ message: 'Not authorized: User object is missing or invalid.' });
+    }
+    
+    // 2. Lấy user từ DB để cập nhật
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+        // Cập nhật các trường được gửi từ request body
+        user.name = req.body.name || user.name;
+        user.email = req.body.email || user.email;
+        user.avatar = req.body.avatar || user.avatar; 
+
+        // 3. Xử lý cập nhật mật khẩu (Hash nó)
+        if (req.body.password) {
+             const salt = await bcrypt.genSalt(10);
+             user.password = await bcrypt.hash(req.body.password, salt);
         }
+        
+        const updatedUser = await user.save();
 
-        // 2. Mã hóa mật khẩu (bcrypt)
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // 3. Tạo user mới
-        user = new User({
-            email,
-            password: hashedPassword,
-            role: role || 'user'
+        res.json({
+            id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            avatar: updatedUser.avatar,
+            message: 'Profile updated successfully',
         });
-
-        await user.save();
-
-        res.status(201).json({ message: 'Đăng ký thành công.', user: { id: user._id, email: user.email } });
-
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server.', error: error.message });
+    } else {
+        // Fallback (thực tế không thể xảy ra nếu middleware hoạt động)
+        res.status(404).json({ message: 'User not found' }); 
     }
 };
 
-exports.login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
 
-        // 1. Tìm user theo email
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng.' });
-        }
-
-        // 2. Xác thực mật khẩu
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng.' });
-        }
-
-        // 3. Tạo JWT Token
-        const payload = {
-            user: {
-                id: user._id,
-                role: user.role
-            }
-        };
-
-        const token = jwt.sign(
-            payload,
-            JWT_SECRET,
-            { expiresIn: '1h' } // Token hết hạn sau 1 giờ
-        );
-
-        // 4. Trả về token và thông tin user
-        res.status(200).json({
-            message: 'Đăng nhập thành công.',
-            token,
-            user: { id: user._id, email: user.email, role: user.role }
-        });
-
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server.', error: error.message });
-    }
-};
-
-exports.logout = (req, res) => {
-    // Backend chỉ cần gửi tín hiệu thành công.
-    // Frontend sẽ chịu trách nhiệm xóa token khỏi Local Storage/Cookie.
-    res.status(200).json({ message: 'Đăng xuất thành công. Token cần được xóa khỏi phía client.' });
+// module.exports đã đúng vì tất cả các hàm giờ đều là biến 'const'
+module.exports = {
+    getUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getProfile,
+    updateProfile,
 };
