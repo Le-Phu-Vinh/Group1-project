@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const authController = require('../controllers/authController');
 
 // Định tuyến cho GET /users (Đã được tiền tố bằng app.use('/users', ...) trong server.js)
 router.get('/', userController.getUsers);
@@ -14,5 +15,9 @@ router.put('/:id', userController.updateUser);
 
 // DELETE /users/:id (API xóa)
 router.delete('/:id', userController.deleteUser);
+
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
+router.post('/logout', authController.logout);
 
 module.exports = router;

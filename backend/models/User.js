@@ -14,6 +14,15 @@ const UserSchema = new mongoose.Schema({
         unique: true, // Đảm bảo email không trùng lặp
         trim: true
     },
+    password: {
+        type: String,
+        required: true
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'], // Chỉ cho phép hai giá trị 'user' hoặc 'admin'
+        default: 'user'
+    }
     // MongoDB sẽ tự động thêm trường _id
 }, {
     timestamps: true // Tự động thêm createdAt và updatedAt

@@ -1,14 +1,9 @@
-// routes/auth.js - Dùng 'import' và 'export default'
-import express from "express";
+const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
 
-// ... (logic signup, login của bạn ở đây) ...
-router.post("/signup", (req, res) => {
-    res.send("Auth signup route");
-});
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
+router.post('/logout', authController.logout);
 
-router.post("/login", (req, res) => {
-    res.send("Auth login route");
-});
-
-export default router; // Quan trọng: dùng 'export default'
+module.exports = router;
