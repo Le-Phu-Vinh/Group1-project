@@ -1,0 +1,21 @@
+### Đăng ký
+POST http://localhost:5000/signup
+Content-Type: application/json
+
+{
+  "name": "Lê Văn Sĩ",
+  "email": "silevan1234@gmail.com",
+  "password": "123456"
+}
+
+### Đăng nhập
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+  "email": "silevan1234@gmail.com",
+  "password": "123456"
+}
+
+### Đăng xuất
+POST http://localhost:5000/logout
