@@ -11,4 +11,6 @@ router.post("/login", (req, res) => {
     res.send("Auth login route");
 });
 
-export default router; // Quan trọng: dùng 'export default'
+frontend
+export default router; // Quan trọng: dùng 'export default'//////
+main
