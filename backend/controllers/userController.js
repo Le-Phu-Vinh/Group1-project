@@ -1,6 +1,9 @@
 const User = require('../models/User'); // Nhập User Model đã tạo
 // Cần nhập bcrypt cho updateProfile
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcryptjs');
+
+
+
 
 // 1. ✅ SỬA: Thay thế 'exports.getUsers' bằng 'const getUsers'
 const getUsers = async (req, res) => {
@@ -140,6 +143,11 @@ const updateProfile = async (req, res) => {
 };
 
 
+
+
+
+
+
 // module.exports đã đúng vì tất cả các hàm giờ đều là biến 'const'
 module.exports = {
     getUsers,
@@ -147,5 +155,5 @@ module.exports = {
     updateUser,
     deleteUser,
     getProfile,
-    updateProfile,
+    updateProfile
 };
