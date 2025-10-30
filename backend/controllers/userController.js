@@ -1,6 +1,18 @@
 const User = require('../models/User'); // Nhập User Model đã tạo
 // Cần nhập bcrypt cho updateProfile
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcryptjs');
+
+const crypto = require('crypto'); // Cần thiết cho Forgot/Reset Password
+const sendEmail = require('../utils/email'); // Cần thiết cho Forgot/Reset Password
+const cloudinary = require('cloudinary').v2; // Cần thiết cho Upload Avatar
+
+
+// Cấu hình Cloudinary (Cần biến môi trường thực tế)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME',
+    api_key: process.env.CLOUDINARY_API_KEY || 'YOUR_API_KEY',
+    api_secret: process.env.CLOUDINARY_API_SECRET || 'YOUR_API_SECRET'
+});
 
 // 1. ✅ SỬA: Thay thế 'exports.getUsers' bằng 'const getUsers'
 const getUsers = async (req, res) => {
@@ -140,6 +152,44 @@ const updateProfile = async (req, res) => {
 };
 
 
+
+
+// 9. Upload Avatar
+const uploadAvatar = async (req, res) => {
+    // Logic Upload Avatar
+    try {
+        const fileToUpload = req.body.image; 
+
+        if (!fileToUpload) {
+            return res.status(400).json({ message: 'Không tìm thấy file ảnh để tải lên.' });
+        }
+
+        const result = await cloudinary.uploader.upload(fileToUpload, {
+            folder: 'user_avatars', 
+            public_id: `avatar_${req.user._id}`, 
+            overwrite: true,
+        });
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+        }
+
+        user.avatar = result.secure_url; 
+        await user.save({ validateBeforeSave: false });
+
+        res.status(200).json({
+            message: 'Avatar đã được cập nhật thành công.',
+            avatarUrl: result.secure_url
+        });
+
+    } catch (error) {
+        console.error('Lỗi Upload Avatar:', error);
+        res.status(500).json({ message: 'Lỗi khi tải ảnh lên Cloudinary.', error: error.message });
+    }
+};
+
+
 // module.exports đã đúng vì tất cả các hàm giờ đều là biến 'const'
 module.exports = {
     getUsers,
@@ -148,4 +198,5 @@ module.exports = {
     deleteUser,
     getProfile,
     updateProfile,
+    uploadAvatar
 };
