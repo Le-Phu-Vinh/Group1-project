@@ -4,6 +4,9 @@ const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email'); // Giữ nguyên, cần cho tính năng khác
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
+
+const cloudinary = require('cloudinary').v2; // Cần thiết cho Upload Avatar
+
 exports.signup = async (req, res) => {
     try {
         const { email, password, name } = req.body; 
@@ -228,6 +231,48 @@ exports.logout = (req, res) => {
     res.status(200).json({ message: 'Đăng xuất thành công. Vui lòng xóa token phía Client.' });
 };
 
+// 9. Upload Avatar
+exports.uploadAvatar = async (req, res) => {
+    // Logic Upload Avatar
+    try {
+        const fileToUpload = req.body.image; 
+
+        if (!fileToUpload) {
+            return res.status(400).json({ message: 'Không tìm thấy file ảnh để tải lên.' });
+        }
+
+        const result = await cloudinary.uploader.upload(fileToUpload, {
+            folder: 'user_avatars', 
+            public_id: `avatar_${req.user._id}`, 
+            overwrite: true,
+        });
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+        }
+
+        user.avatar = result.secure_url; 
+        user.passwordChangedAt = Date.now();
+        await user.save({ validateBeforeSave: false });
+
+        res.status(200).json({
+            message: 'Avatar đã được cập nhật thành công.',
+            avatarUrl: result.secure_url,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                avatar: result.secure_url
+            }
+        });
+
+    } catch (error) {
+        console.error('Lỗi Upload Avatar:', error);
+        res.status(500).json({ message: 'Lỗi khi tải ảnh lên Cloudinary.', error: error.message });
+    }
+};
+
 // Exports tất cả các hàm
 module.exports = {
     signup: exports.signup,
@@ -235,4 +280,5 @@ module.exports = {
     logout: exports.logout,
     forgotPassword: exports.forgotPassword,
     resetPassword: exports.resetPassword,
+    uploadAvatar: exports.uploadAvatar,
 };

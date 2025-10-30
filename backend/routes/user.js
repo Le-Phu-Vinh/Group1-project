@@ -5,12 +5,11 @@ const router = express.Router();
 // (Đảm bảo các hàm này được export tập trung bằng module.exports trong controller)
 const { 
     getUsers, createUser, updateUser, deleteUser, 
-    getProfile, updateProfile, 
-    uploadAvatar
+    getProfile, updateProfile
 } = require('../controllers/userController');
 
 // ✅ Import các hàm Auth
-const { signup, login, logout, resetPassword, forgotPassword } = require('../controllers/authController');
+const { signup, login, logout, resetPassword, forgotPassword, uploadAvatar } = require('../controllers/authController');
 
 const protect = require('../middleware/authMiddleware'); // Middleware xác thực
 
@@ -28,7 +27,7 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.patch('/reset-password/:token', resetPassword);
 router.post('/forgot-password/', forgotPassword);
-
+router.put('/upload-avatar', protect, uploadAvatar);
 
 
 
@@ -36,7 +35,7 @@ router.post('/forgot-password/', forgotPassword);
 // 3. Upload Avatar (Yêu cầu xác thực)
 // @route   PUT /users/upload-avatar
 // @access  Private
-router.put('/upload-avatar', protect, uploadAvatar);
+
 
 // 1. GET /users: Chỉ Admin được xem danh sách người dùng
 router.get('/', protect, admin, getUsers); 
