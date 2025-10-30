@@ -23,11 +23,21 @@ const protect = async (req, res, next) => {
 
             // 3. Tìm người dùng và gắn vào đối tượng request
             // .select('-password') để không bao gồm mật khẩu
-            const user = await User.findById(decoded.userId).select('-password');
+            const user = await User.findById(decoded.id).select('-password');
 
             if (!user) {
                  // Nếu token hợp lệ nhưng user không còn trong DB
                  return res.status(401).json({ message: 'Not authorized, user not found' });
+            }
+
+            // 🛑 THÊM BƯỚC 4: Kiểm tra xem user có đổi mật khẩu (hay thông tin quan trọng) sau khi token được cấp không
+            if (user.passwordChangedAt) {
+                const changedTimestamp = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
+                
+                // Nếu thời điểm thay đổi (changedTimestamp) LỚN HƠN thời điểm cấp token (decoded.iat)
+                if (changedTimestamp > decoded.iat) {
+                    return res.status(401).json({ message: 'Not authorized, password/info recently changed. Please log in again.' });
+                }
             }
 
             // 4. Chuyển sang middleware hoặc controller tiếp theo 
