@@ -233,40 +233,47 @@ exports.logout = (req, res) => {
 
 // 9. Upload Avatar
 exports.uploadAvatar = async (req, res) => {
-    // Logic Upload Avatar
     try {
-        const fileToUpload = req.body.image; 
-
-        if (!fileToUpload) {
+        // Kiểm tra file upload
+        if (!req.file) {
             return res.status(400).json({ message: 'Không tìm thấy file ảnh để tải lên.' });
         }
 
-        const result = await cloudinary.uploader.upload(fileToUpload, {
-            folder: 'user_avatars', 
-            public_id: `avatar_${req.user._id}`, 
-            overwrite: true,
-        });
-
-        const user = await User.findById(req.user._id);
-        if (!user) {
-            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
-        }
-
-        user.avatar = result.secure_url; 
-        user.passwordChangedAt = Date.now();
-        await user.save({ validateBeforeSave: false });
-
-        res.status(200).json({
-            message: 'Avatar đã được cập nhật thành công.',
-            avatarUrl: result.secure_url,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: result.secure_url
+        // Upload buffer lên Cloudinary
+        const result = await cloudinary.uploader.upload_stream(
+            {
+                folder: 'user_avatars',
+                public_id: `avatar_${req.user._id}`,
+                overwrite: true,
+                resource_type: 'image'
+            },
+            async (error, result) => {
+                if (error) {
+                    console.error('Lỗi Upload Avatar:', error);
+                    return res.status(500).json({ message: 'Lỗi khi tải ảnh lên Cloudinary.', error: error.message });
+                }
+                // Cập nhật user
+                const user = await User.findById(req.user._id);
+                if (!user) {
+                    return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+                }
+                user.avatar = result.secure_url;
+                user.passwordChangedAt = Date.now();
+                await user.save({ validateBeforeSave: false });
+                res.status(200).json({
+                    message: 'Avatar đã được cập nhật thành công.',
+                    avatarUrl: result.secure_url,
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        avatar: result.secure_url
+                    }
+                });
             }
-        });
-
+        );
+        // Gửi buffer vào stream
+        result.end(req.file.buffer);
     } catch (error) {
         console.error('Lỗi Upload Avatar:', error);
         res.status(500).json({ message: 'Lỗi khi tải ảnh lên Cloudinary.', error: error.message });

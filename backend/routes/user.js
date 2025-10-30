@@ -9,7 +9,13 @@ const {
 } = require('../controllers/userController');
 
 // ✅ Import các hàm Auth
+
 const { signup, login, logout, resetPassword, forgotPassword, uploadAvatar } = require('../controllers/authController');
+
+// Multer để nhận file upload
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const protect = require('../middleware/authMiddleware'); // Middleware xác thực
 
@@ -27,7 +33,7 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.patch('/reset-password/:token', resetPassword);
 router.post('/forgot-password/', forgotPassword);
-router.put('/upload-avatar', protect, uploadAvatar);
+router.post('/upload-avatar', protect, upload.single('avatar'), uploadAvatar);
 
 
 
