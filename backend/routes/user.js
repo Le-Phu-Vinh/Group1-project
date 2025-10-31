@@ -1,22 +1,62 @@
-// routes/user.js
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
 
-// Định tuyến cho GET /users (Đã được tiền tố bằng app.use('/users', ...) trong server.js)
-router.get('/', userController.getUsers);
+// ✅ Gom tất cả các hàm từ userController vào một lệnh Destructuring DUY NHẤT.
+// (Đảm bảo các hàm này được export tập trung bằng module.exports trong controller)
+const { 
+    getUsers, createUser, updateUser, deleteUser, 
+    getProfile, updateProfile, makeAdmin
+} = require('../controllers/userController');
 
-// Định tuyến cho POST /users
-router.post('/', userController.createUser);
+// ✅ Import các hàm Auth
 
-// PUT /users/:id (API cập nhật)
-router.put('/:id', userController.updateUser);
+const { signup, login, logout, resetPassword, forgotPassword, uploadAvatar } = require('../controllers/authController');
 
-// DELETE /users/:id (API xóa)
-router.delete('/:id', userController.deleteUser);
+// Multer để nhận file upload
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-router.post('/signup', userController.signup);
-router.post('/login', userController.login);
-router.post('/logout', userController.logout);
+const protect = require('../middleware/authMiddleware'); // Middleware xác thực
 
+const admin = require('../middleware/adminMiddleware'); // Middleware kiểm tra quyền Admin
+
+// Route /profile (Đã bảo vệ)
+router.route('/profile')
+    .get(protect, getProfile)
+    .put(protect, updateProfile);
+    
+
+    // Các route Auth
+router.post('/signup', signup);
+router.post('/login', login);
+router.post('/logout', logout);
+router.patch('/reset-password/:token', resetPassword);
+router.post('/forgot-password/', forgotPassword);
+router.post('/upload-avatar', protect, upload.single('avatar'), uploadAvatar);
+
+
+
+
+// 3. Upload Avatar (Yêu cầu xác thực)
+// @route   PUT /users/upload-avatar
+// @access  Private
+
+
+// 1. GET /users: Chỉ Admin được xem danh sách người dùng
+router.get('/', protect, admin, getUsers); 
+
+// 2. POST /users: ÁP DỤNG RBAC
+router.post('/', protect, admin, createUser); 
+
+// 3. PUT /:id: ÁP DỤNG RBAC
+router.put('/:id', protect, admin, updateUser); 
+
+// 4. DELETE /:id: ÁP DỤNG RBAC
+router.delete('/:id', protect, admin, deleteUser); 
+
+// TEMPORARY ROUTE FOR MAKING A USER AN ADMIN
+router.post('/make-admin/:id', makeAdmin); 
+
+    
 module.exports = router;

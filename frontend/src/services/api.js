@@ -26,4 +26,18 @@ api.interceptors.request.use(
   }
 );
 
+// Lấy danh sách tất cả người dùng (yêu cầu quyền admin)
+export const getUsers = () => api.get('/users');
+
+// Xóa một người dùng theo ID (yêu cầu quyền admin)
+export const deleteUser = (id) => api.delete(`/users/${id}`);
+
+// Gửi yêu cầu quên mật khẩu
+export const forgotPassword = (email) => api.post('/users/forgot-password', { email });
+
+// Đặt lại mật khẩu bằng token
+export const resetPassword = (token, password, passwordConfirm) => 
+  api.patch(`/users/reset-password/${token}`, { password, passwordConfirm });
+
+
 export default api;
