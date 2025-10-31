@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     
     if (token) {
       // Nếu có token, gọi API /profile (Hoạt động 2) để lấy thông tin user
-      api.get('/profile')
+      api.get('/users/profile')
         .then(res => {
           setUser(res.data); // Lưu thông tin user vào state
         })

@@ -148,6 +148,22 @@ const updateProfile = async (req, res) => {
 
 
 
+const makeAdmin = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.role = 'Admin';
+        await user.save({ validateBeforeSave: false });
+
+        res.status(200).json({ message: 'User is now an admin', user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error making admin', error: error.message });
+    }
+};
+
 // module.exports đã đúng vì tất cả các hàm giờ đều là biến 'const'
 module.exports = {
     getUsers,
@@ -155,5 +171,6 @@ module.exports = {
     updateUser,
     deleteUser,
     getProfile,
-    updateProfile
+    updateProfile,
+    makeAdmin
 };
