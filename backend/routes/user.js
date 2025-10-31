@@ -5,7 +5,7 @@ const router = express.Router();
 // (Đảm bảo các hàm này được export tập trung bằng module.exports trong controller)
 const { 
     getUsers, createUser, updateUser, deleteUser, 
-    getProfile, updateProfile
+    getProfile, updateProfile, makeAdmin
 } = require('../controllers/userController');
 
 // ✅ Import các hàm Auth
@@ -48,6 +48,9 @@ router.put('/:id', protect, admin, updateUser);
 
 // 4. DELETE /:id: ÁP DỤNG RBAC
 router.delete('/:id', protect, admin, deleteUser); 
+
+// TEMPORARY ROUTE FOR MAKING A USER AN ADMIN
+router.post('/make-admin/:id', makeAdmin); 
 
     
 module.exports = router;

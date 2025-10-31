@@ -1,6 +1,6 @@
 const admin = (req, res, next) => {
     // 1. Kiểm tra req.user đã được gán bởi protect middleware
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && req.user.role === 'Admin') {
         // 2. Nếu là admin, cho phép tiếp tục
         next();
     } else {

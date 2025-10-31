@@ -19,7 +19,11 @@ function Login() {
       const res = await api.post('/users/login', { email, password });
       const { user, token } = res.data; 
       login(user, token); 
-      navigate('/profile'); 
+      if (user.role === 'Admin') {
+        navigate('/admin');
+      } else {
+        navigate('/profile');
+      } 
     } catch (err) {
       setError(err.response?.data?.message || 'Sai email hoặc mật khẩu');
     }
